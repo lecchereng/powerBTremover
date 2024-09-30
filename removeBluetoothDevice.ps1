@@ -12,10 +12,11 @@ $Source = @"
 "@
 Function Get-BTDevice {
 	Get-PnpDevice -class Bluetooth |
-		?{$_.HardwareID -match 'DEV_'} |
+        	# Filter object with specific HW id pattern BTHENUM\DEV_ or BTHLE\DEV_
+		?{$_.HardwareID -match '\\DEV_'} |
 			select Status, Class, FriendlyName, HardwareID,
-				# Extract device address from HardwareID
-				@{N='Address';E={[uInt64]('0x{0}' -f $_.HardwareID[0].Substring(12))}}
+				# Extract device address from HardwareID (Last 21 characters of it)
+				@{N='Address';E={[uInt64]('0x{0}' -f $_.HardwareID[0].Remove(0,($_.HardwareID[0].Length-12)))}}
 }
 
 ################## Execution Begins Here ################
@@ -36,12 +37,12 @@ Do {
 			If (!$Result) {
 				"Device removed successfully." | Write-Host
 			} Else {
-				("Sorry, an error occured. Return was: {0}" -f $Result) | Write-Host
+				("Sorry, an error occurred. Return was: {0}" -f $Result) | Write-Host
 			}
 		}
 	} Else {
 		"`n********* No devices found ********" | Write-Host
 	}
-} While (($BTDevices = @(Get-BTDevice)) -and [int]$selected)
+} While ( [int]$selected - and ($BTDevices = @(Get-BTDevice)))
 Write-Host "`n`nPress any key to exit...";
 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
